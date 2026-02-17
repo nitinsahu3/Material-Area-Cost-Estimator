@@ -1,182 +1,379 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Tile Calculator</title>
+<title>Material Area Cost Estimator</title>
+
 <style>
-body { font-family: Arial; padding:15px; background:#f2f2f2; }
-.box { background:white; padding:15px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
-input, select, button {
-    width:100%; padding:10px; margin:8px 0; font-size:16px;
+body{
+    font-family:Segoe UI, Arial;
+    background:#f4f6f9;
+    padding:20px;
 }
-button {
-    background:#007bff; color:white; border:none; border-radius:6px;
+.container{
+    max-width:720px;
+    margin:auto;
 }
-.result { margin-top:15px; font-weight:bold; font-size:18px; }
-.secondary { font-size:14px; color:gray; }
-.toggle {
-    margin-top:10px;
-    background:#444;
+.card{
+    background:#fff;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.08);
+    margin-bottom:20px;
 }
-.hidden { display:none; }
-.wallRow {
+h2{
+    margin-bottom:15px;
+    color:#2c3e50;
+}
+input,select,button{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    font-size:15px;
+    border-radius:6px;
+    border:1px solid #ddd;
+}
+button{
+    background:#2c3e50;
+    color:#fff;
+    border:none;
+    font-weight:600;
+}
+button:hover{
+    background:#1a252f;
+}
+.result{
+    margin-top:12px;
+    font-weight:600;
+}
+.toggle-bar{
+    background:#eef1f5;
+    padding:10px 12px;
+    border-radius:8px;
     display:flex;
-    gap:5px;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+    font-size:14px;
+    margin-bottom:10px;
 }
-.wallRow input {
-    width:50%;
+.toggle-bar:hover{
+    background:#e1e6ed;
+}
+.hidden{display:none;}
+.section-row{
+    display:flex;
+    gap:6px;
+    align-items:center;
+}
+.section-row input{
+    width:40%;
+}
+.remove-btn{
+    width:30px;
+    height:30px;
+    background:#e74c3c;
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+.history-item{
+    background:#eef1f5;
+    padding:12px;
+    border-radius:8px;
+    margin-bottom:8px;
+    font-size:13px;
+    display:flex;
+    justify-content:space-between;
+}
+.history-content{
+    max-width:90%;
+}
+.delete-btn{
+    background:#e74c3c;
+    color:#fff;
+    border:none;
+    border-radius:50%;
+    width:22px;
+    height:22px;
+    font-size:12px;
+    cursor:pointer;
+}
+.small-btn{
+    background:#7f8c8d;
 }
 </style>
 </head>
+
 <body>
 
-<div class="box">
-<h3>Pro Tile Rate Calculator</h3>
+<div class="container">
 
-<label>Tile Length (feet)</label>
+<div class="card">
+<h2>Material Area Cost Estimator</h2>
+
+<!-- MATERIAL NAME -->
+<div class="toggle-bar" onclick="toggleSection('nameSection')">
+<span>Add Material Name (Optional)</span>
+<span>+</span>
+</div>
+<div id="nameSection" class="hidden">
+<input type="text" id="materialName" placeholder="Example: 8x4 Plywood / 2x4 Vitrified Tile">
+</div>
+
+<label>Unit Length (ft)</label>
 <input type="number" id="length">
 
-<label>Tile Width (feet)</label>
+<label>Unit Width (ft)</label>
 <input type="number" id="width">
 
 <label>Pricing Type</label>
 <select id="pricingType">
-  <option value="piece">Rate per Piece</option>
-  <option value="box">Rate per Box</option>
-  <option value="sqft">Rate per Square Foot</option>
+<option value="piece">Rate per Unit</option>
+<option value="box">Rate per Box</option>
+<option value="sqft">Rate per Square Foot</option>
 </select>
 
 <label>Rate (Rs.)</label>
 <input type="number" id="rate">
 
 <div id="boxField" class="hidden">
-    <label>Tiles per Box</label>
-    <input type="number" id="tilesPerBox">
+<label>Units per Box</label>
+<input type="number" id="unitsPerBox">
 </div>
 
-<label>Room Area (optional, sq ft)</label>
-<input type="number" id="roomArea">
+<button onclick="calculateRate()">Calculate Unit Rate</button>
+<div class="result" id="rateOutput"></div>
 
-<button onclick="calculateBasic()">Calculate Rate</button>
+<!-- MANUAL AREA ENTRY -->
+<div class="toggle-bar" onclick="toggleSection('manualSection')">
+<span>Enter Total Area / Units</span>
+<span>+</span>
+</div>
+<div id="manualSection" class="hidden">
+<label>Total Area (sq ft)</label>
+<input type="number" id="manualArea">
 
-<div class="result" id="mainOutput"></div>
-<div class="secondary" id="secondaryOutput"></div>
+<label>OR Total Units Required</label>
+<input type="number" id="manualUnits">
 
-<button class="toggle" onclick="toggleDimensions()">Enter Room Dimensions</button>
+<button onclick="calculateManual()">Calculate</button>
+<div class="result" id="manualOutput"></div>
+</div>
 
+<!-- AREA SECTIONS -->
+<div class="toggle-bar" onclick="toggleSection('dimensionSection')">
+<span>Area Sections (Room / Wall / Floor)</span>
+<span>+</span>
+</div>
 <div id="dimensionSection" class="hidden">
-
-<h4>Room Wall Dimensions</h4>
-<div id="walls"></div>
-
-<button onclick="addWall()">Add Wall</button>
+<div id="sections"></div>
+<button onclick="addSection()">Add Section</button>
 
 <label>Wastage %</label>
 <input type="number" id="wastage" value="5">
 
-<button onclick="calculateDimensions()">Calculate From Dimensions</button>
-
+<button onclick="calculateSections()">Calculate</button>
 <div class="result" id="dimensionOutput"></div>
+</div>
 
+</div>
+
+<!-- HISTORY -->
+<div class="card">
+<h2>History</h2>
+<div id="history"></div>
+<button class="small-btn" onclick="clearHistory()">Clear All</button>
 </div>
 
 </div>
 
 <script>
 
-let costPerSqFtGlobal = 0;
-let ratePerTileGlobal = 0;
-let areaPerTileGlobal = 0;
+let costPerSqFt=0;
+let areaPerUnit=0;
+let currentKey=null;
 
-document.getElementById("pricingType").addEventListener("change", function() {
-    document.getElementById("boxField").classList.toggle("hidden", this.value !== "box");
+function toggleSection(id){
+    document.getElementById(id).classList.toggle("hidden");
+}
+
+document.getElementById("pricingType").addEventListener("change",function(){
+    document.getElementById("boxField").classList.toggle("hidden",this.value!=="box");
 });
 
-function calculateBasic() {
-
-    let length = parseFloat(document.getElementById("length").value);
-    let width = parseFloat(document.getElementById("width").value);
-    let rate = parseFloat(document.getElementById("rate").value);
-    let pricingType = document.getElementById("pricingType").value;
-    let tilesPerBox = parseFloat(document.getElementById("tilesPerBox").value);
-    let roomArea = parseFloat(document.getElementById("roomArea").value);
-
-    if (!length || !width || !rate) {
-        alert("Please fill tile size and rate");
-        return;
-    }
-
-    areaPerTileGlobal = length * width;
-
-    if (pricingType === "piece") {
-        ratePerTileGlobal = rate;
-        costPerSqFtGlobal = rate / areaPerTileGlobal;
-    }
-
-    if (pricingType === "box") {
-        if (!tilesPerBox) { alert("Enter tiles per box"); return; }
-        ratePerTileGlobal = rate / tilesPerBox;
-        costPerSqFtGlobal = ratePerTileGlobal / areaPerTileGlobal;
-    }
-
-    if (pricingType === "sqft") {
-        costPerSqFtGlobal = rate;
-        ratePerTileGlobal = rate * areaPerTileGlobal;
-    }
-
-    let totalCost = roomArea ? roomArea * costPerSqFtGlobal : 0;
-
-    document.getElementById("mainOutput").innerHTML =
-        "Cost per sq ft: Rs. " + costPerSqFtGlobal.toFixed(2);
-
-    document.getElementById("secondaryOutput").innerHTML =
-        "Cost per tile: Rs. " + ratePerTileGlobal.toFixed(2) +
-        "<br>Area per tile: " + areaPerTileGlobal.toFixed(2) + " sq ft" +
-        (totalCost ? "<br><br>Total cost: Rs. " + totalCost.toFixed(2) : "");
+function generateKey(length,width,rate,type,box,name){
+    return `${length}_${width}_${type}_${rate}_${box||0}_${name||""}`;
 }
 
-function toggleDimensions() {
-    document.getElementById("dimensionSection").classList.toggle("hidden");
-}
+function calculateRate(){
 
-function addWall() {
-    let div = document.createElement("div");
-    div.className = "wallRow";
-    div.innerHTML = '<input type="number" placeholder="Length (ft)">' +
-                    '<input type="number" placeholder="Height (ft)">';
-    document.getElementById("walls").appendChild(div);
-}
+    let name=document.getElementById("materialName").value.trim();
+    let length=parseFloat(document.getElementById("length").value);
+    let width=parseFloat(document.getElementById("width").value);
+    let rate=parseFloat(document.getElementById("rate").value);
+    let type=document.getElementById("pricingType").value;
+    let unitsPerBox=parseFloat(document.getElementById("unitsPerBox").value)||0;
 
-function calculateDimensions() {
+    if(!length||!width||!rate){alert("Fill required fields");return;}
 
-    if (!costPerSqFtGlobal || !areaPerTileGlobal) {
-        alert("First calculate rate above");
-        return;
+    areaPerUnit=length*width;
+    currentKey=generateKey(length,width,rate,type,unitsPerBox,name);
+
+    let ratePerUnit=0;
+
+    if(type==="piece"){
+        ratePerUnit=rate;
+        costPerSqFt=rate/areaPerUnit;
+    }
+    if(type==="box"){
+        if(!unitsPerBox){alert("Enter units per box");return;}
+        ratePerUnit=rate/unitsPerBox;
+        costPerSqFt=ratePerUnit/areaPerUnit;
+    }
+    if(type==="sqft"){
+        costPerSqFt=rate;
+        ratePerUnit=rate*areaPerUnit;
     }
 
-    let walls = document.querySelectorAll("#walls .wallRow");
-    let totalArea = 0;
+    let html=`
+    ${name?'<strong>'+name+'</strong><br>':''}
+    Unit Size: ${length} x ${width} ft<br>
+    Cost per sq ft: Rs. ${costPerSqFt.toFixed(2)}<br>
+    Cost per unit: Rs. ${ratePerUnit.toFixed(2)}
+    `;
 
-    walls.forEach(wall => {
-        let inputs = wall.querySelectorAll("input");
-        let length = parseFloat(inputs[0].value);
-        let height = parseFloat(inputs[1].value);
-        if (length && height) {
-            totalArea += length * height;
+    document.getElementById("rateOutput").innerHTML=html;
+    saveHistory(currentKey,html,false);
+}
+
+function calculateManual(){
+
+    if(!currentKey){alert("Calculate rate first");return;}
+
+    let area=parseFloat(document.getElementById("manualArea").value);
+    let units=parseFloat(document.getElementById("manualUnits").value);
+
+    if(!area && !units){alert("Enter area or units");return;}
+
+    if(area){
+        units=Math.ceil(area/areaPerUnit);
+    } else {
+        area=units*areaPerUnit;
+    }
+
+    let totalCost=area*costPerSqFt;
+
+    let html=`
+    <br><u>Manual Calculation</u><br>
+    Area: ${area.toFixed(2)} sq ft<br>
+    Units Required: ${units}<br>
+    Total Cost: Rs. ${totalCost.toFixed(2)}
+    `;
+
+    document.getElementById("manualOutput").innerHTML=html;
+    saveHistory(currentKey,html,true);
+}
+
+function addSection(){
+    let div=document.createElement("div");
+    div.className="section-row";
+    div.innerHTML=`
+        <input type="number" placeholder="Length (ft)">
+        <input type="number" placeholder="Width (ft)">
+        <button class="remove-btn" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    document.getElementById("sections").appendChild(div);
+}
+
+function calculateSections(){
+
+    if(!currentKey){alert("Calculate rate first");return;}
+
+    let sections=document.querySelectorAll(".section-row");
+    if(!sections.length){alert("Add sections");return;}
+
+    let totalArea=0;
+
+    sections.forEach(s=>{
+        let inputs=s.querySelectorAll("input");
+        let l=parseFloat(inputs[0].value);
+        let w=parseFloat(inputs[1].value);
+        if(!isNaN(l)&&!isNaN(w)){
+            totalArea+=l*w;
         }
     });
 
-    let wastage = parseFloat(document.getElementById("wastage").value) || 0;
-    totalArea = totalArea * (1 + wastage/100);
+    let wastage=parseFloat(document.getElementById("wastage").value)||0;
+    totalArea*=1+(wastage/100);
 
-    let tilesNeeded = Math.ceil(totalArea / areaPerTileGlobal);
-    let totalCost = totalArea * costPerSqFtGlobal;
+    let units=Math.ceil(totalArea/areaPerUnit);
+    let totalCost=totalArea*costPerSqFt;
 
-    document.getElementById("dimensionOutput").innerHTML =
-        "Total Area (with wastage): " + totalArea.toFixed(2) + " sq ft<br>" +
-        "Tiles Required: " + tilesNeeded + "<br>" +
-        "Total Cost: Rs. " + totalCost.toFixed(2);
+    let html=`
+    <br><u>Section Calculation</u><br>
+    Area (with wastage): ${totalArea.toFixed(2)} sq ft<br>
+    Units Required: ${units}<br>
+    Total Cost: Rs. ${totalCost.toFixed(2)}
+    `;
+
+    document.getElementById("dimensionOutput").innerHTML=html;
+    saveHistory(currentKey,html,true);
 }
+
+function saveHistory(key,data,append){
+
+    let history=JSON.parse(localStorage.getItem("materialHistory")||"{}");
+
+    if(!history[key]){
+        history[key]=data;
+    }else{
+        history[key]+=data;
+    }
+
+    localStorage.setItem("materialHistory",JSON.stringify(history));
+    loadHistory();
+}
+
+function loadHistory(){
+    let history=JSON.parse(localStorage.getItem("materialHistory")||"{}");
+    let div=document.getElementById("history");
+    div.innerHTML="";
+
+    Object.entries(history).forEach(([key,value])=>{
+        let box=document.createElement("div");
+        box.className="history-item";
+
+        let content=document.createElement("div");
+        content.className="history-content";
+        content.innerHTML=value;
+
+        let del=document.createElement("button");
+        del.className="delete-btn";
+        del.innerHTML="&times;";
+        del.onclick=function(){deleteHistory(key);};
+
+        box.appendChild(content);
+        box.appendChild(del);
+        div.appendChild(box);
+    });
+}
+
+function deleteHistory(key){
+    let history=JSON.parse(localStorage.getItem("materialHistory")||"{}");
+    delete history[key];
+    localStorage.setItem("materialHistory",JSON.stringify(history));
+    loadHistory();
+}
+
+function clearHistory(){
+    localStorage.removeItem("materialHistory");
+    loadHistory();
+}
+
+loadHistory();
 
 </script>
 
